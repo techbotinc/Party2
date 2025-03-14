@@ -4,142 +4,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watch Together</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        #header {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid #333;
-        }
-
-        #content {
-            display: flex;
-            flex-grow: 1;
-        }
-
-        #video-container {
-            flex-grow: 2;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #youtube-player {
-            flex-grow: 1;
-            min-height: 300px;
-        }
-
-        #chat-container {
-            width: 300px;
-            padding: 20px;
-            border-left: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #chat-messages {
-            flex-grow: 1;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-
-        #chat-input {
-            display: flex;
-        }
-
-        #message-input {
-            flex-grow: 1;
-            padding: 8px;
-            border: 1px solid #555;
-            background-color: #222;
-            color: #f0f0f0;
-            border-radius: 4px;
-            margin-right: 5px;
-        }
-
-        #send-button {
-            padding: 8px 12px;
-            background-color: #444;
-            color: #f0f0f0;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .emoji-button{
-            padding: 8px 12px;
-            background-color: #444;
-            color: #f0f0f0;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
         #emoji-picker {
-            position: absolute;
             display: none;
-            background-color: #333;
-            border: 1px solid #555;
-            border-radius: 4px;
-            padding: 10px;
-            z-index: 100;
+            position: absolute;
+            background-color: #374151;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            z-index: 50;
             flex-wrap: wrap;
             width: 200px;
         }
 
         #emoji-picker button {
+            font-size: 1.25rem;
+            margin: 0.25rem;
             background: none;
             border: none;
-            font-size: 20px;
             cursor: pointer;
-            margin: 2px;
         }
     </style>
 </head>
-<body>
-    <div id="header">
-        <h1>Watch Together</h1>
-    </div>
-    <div id="content">
-        <div id="video-container">
-            <div id="youtube-player"></div>
-            <input type="text" id="video-url" placeholder="Enter YouTube Video URL">
-            <button id="load-video">Load Video</button>
-        </div>
-        <div id="chat-container">
-            <div id="chat-messages"></div>
-            <div id="chat-input">
-                <input type="text" id="message-input" placeholder="Type a message...">
-                <button id="send-button">Send</button>
-                <button class="emoji-button" id="emoji-trigger">😀</button>
+<body class="bg-gray-900 text-white h-screen flex flex-col">
+
+    <header class="p-4 text-center border-b border-gray-800">
+        <h1 class="text-xl font-semibold">Watch Together</h1>
+    </header>
+
+    <main class="flex flex-col flex-grow p-4 space-y-4">
+
+        <div class="flex flex-col space-y-2">
+            <div id="youtube-player" class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden"></div>
+            <div class="flex space-x-2">
+                <input type="text" id="search-query" placeholder="Search YouTube" class="flex-grow bg-gray-800 border border-gray-700 rounded-md p-3 text-sm">
+                <button id="search-video" class="bg-blue-600 hover:bg-blue-700 text-white rounded-md p-3 text-sm">Search</button>
             </div>
-            <div id="emoji-picker">
-                </div>
         </div>
-    </div>
+
+        <div class="flex flex-col flex-grow bg-gray-800 rounded-lg overflow-hidden">
+            <div id="chat-messages" class="flex-grow p-3 overflow-y-auto space-y-2"></div>
+            <div class="p-3 border-t border-gray-700 flex space-x-2 relative">
+                <input type="text" id="message-input" placeholder="Type a message..." class="flex-grow bg-gray-900 border border-gray-700 rounded-md p-3 text-sm">
+                <button id="send-button" class="bg-green-600 hover:bg-green-700 text-white rounded-md p-3 text-sm">Send</button>
+                <button id="emoji-trigger" class="bg-gray-700 hover:bg-gray-600 text-white rounded-md p-3 text-sm">😀</button>
+                <div id="emoji-picker" class="absolute bottom-12 right-0 flex"></div>
+            </div>
+        </div>
+
+    </main>
 
     <script>
         let player;
         const chatMessages = document.getElementById('chat-messages');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
-        const videoUrlInput = document.getElementById('video-url');
-        const loadVideoButton = document.getElementById('load-video');
+        const searchQueryInput = document.getElementById('search-query');
+        const searchVideoButton = document.getElementById('search-video');
         const emojiPicker = document.getElementById('emoji-picker');
         const emojiTrigger = document.getElementById('emoji-trigger');
 
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('youtube-player', {
                 height: '360',
-                width: '640',
+                width: '100%',
                 videoId: '',
+                playerVars: {
+                  'playsinline': 1,
+                  'controls': 1,
+                  'rel': 0,
+                  'showinfo': 0,
+                  'modestbranding': 1
+                },
                 events: {
                     'onReady': onPlayerReady,
                     'onStateChange': onPlayerStateChange
@@ -151,21 +87,25 @@
         }
 
         function onPlayerStateChange(event) {
-        }
-        loadVideoButton.addEventListener('click', function(){
-            const videoUrl = videoUrlInput.value;
-            const videoId = getVideoId(videoUrl);
-            if(videoId){
-                player.loadVideoById(videoId);
+            if (event.data === YT.PlayerState.UNSTARTED) {
+                document.getElementById("youtube-player").innerHTML = "";
             }
-
-        });
-        function getVideoId(url) {
-            const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[7].length == 11) ? match[7] : false;
         }
 
+        searchVideoButton.addEventListener('click', searchAndLoadVideo);
+        searchQueryInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                searchAndLoadVideo();
+            }
+        });
+
+        function searchAndLoadVideo() {
+            const searchQuery = searchQueryInput.value.trim();
+            if (searchQuery) {
+                const placeholderVideoId = 'dQw4w9WgXcQ';
+                player.loadVideoById(placeholderVideoId);
+            }
+        }
         sendButton.addEventListener('click', sendMessage);
         messageInput.addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
@@ -181,6 +121,7 @@
             if (message) {
                 const messageElement = document.createElement('div');
                 messageElement.textContent = message;
+                messageElement.classList.add('bg-gray-700', 'p-2', 'rounded-lg', 'text-sm');
                 chatMessages.appendChild(messageElement);
                 messageInput.value = '';
                 chatMessages.scrollTop = chatMessages.scrollHeight;
