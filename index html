@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Together</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+
+        #content {
+            display: flex;
+            flex-grow: 1;
+        }
+
+        #video-container {
+            flex-grow: 2;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #youtube-player {
+            flex-grow: 1;
+            min-height: 300px;
+        }
+
+        #chat-container {
+            width: 300px;
+            padding: 20px;
+            border-left: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        #chat-input {
+            display: flex;
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #555;
+            background-color: #222;
+            color: #f0f0f0;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+
+        #send-button {
+            padding: 8px 12px;
+            background-color: #444;
+            color: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .emoji-button{
+            padding: 8px 12px;
+            background-color: #444;
+            color: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #emoji-picker {
+            position: absolute;
+            display: none;
+            background-color: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 10px;
+            z-index: 100;
+            flex-wrap: wrap;
+            width: 200px;
+        }
+
+        #emoji-picker button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Watch Together</h1>
+    </div>
+    <div id="content">
+        <div id="video-container">
+            <div id="youtube-player"></div>
+            <input type="text" id="video-url" placeholder="Enter YouTube Video URL">
+            <button id="load-video">Load Video</button>
+        </div>
+        <div id="chat-container">
+            <div id="chat-messages"></div>
+            <div id="chat-input">
+                <input type="text" id="message-input" placeholder="Type a message...">
+                <button id="send-button">Send</button>
+                <button class="emoji-button" id="emoji-trigger">😀</button>
+            </div>
+            <div id="emoji-picker">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        let player;
+        const chatMessages = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const videoUrlInput = document.getElementById('video-url');
+        const loadVideoButton = document.getElementById('load-video');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const emojiTrigger = document.getElementById('emoji-trigger');
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '360',
+                width: '640',
+                videoId: '',
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+        }
+
+        function onPlayerStateChange(event) {
+        }
+        loadVideoButton.addEventListener('click', function(){
+            const videoUrl = videoUrlInput.value;
+            const videoId = getVideoId(videoUrl);
+            if(videoId){
+                player.loadVideoById(videoId);
+            }
+
+        });
+        function getVideoId(url) {
+            const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[7].length == 11) ? match[7] : false;
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        emojiTrigger.addEventListener('click', function(){
+            emojiPicker.style.display = emojiPicker.style.display === 'flex' ? 'none':'flex';
+        });
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                const messageElement = document.createElement('div');
+                messageElement.textContent = message;
+                chatMessages.appendChild(messageElement);
+                messageInput.value = '';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+        const emojis = ['😀', '😂', '😍', '👍', '👎', '❤️', '🎉', '🔥', '😢', '🤔'];
+        emojis.forEach(emoji => {
+            const emojiButton = document.createElement('button');
+            emojiButton.textContent = emoji;
+            emojiButton.addEventListener('click', function() {
+                messageInput.value += emoji;
+                emojiPicker.style.display = 'none';
+            });
+            emojiPicker.appendChild(emojiButton);
+        });
+
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    </script>
+</body>
+</html>
